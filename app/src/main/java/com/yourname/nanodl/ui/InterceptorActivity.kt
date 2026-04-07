@@ -3,6 +3,7 @@ package com.yourname.nanodl.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.*
 import com.yourname.nanodl.R
@@ -39,7 +40,6 @@ class InterceptorActivity : Activity() {
                 formatGroup.visibility = View.VISIBLE
                 downloadBtn.visibility = View.VISIBLE
 
-                // Add 1080p/720p Video Option
                 if (result.videoStream != null) {
                     val rbVideo = RadioButton(this@InterceptorActivity).apply {
                         text = "Video (${result.resolution})"
@@ -49,7 +49,6 @@ class InterceptorActivity : Activity() {
                     formatGroup.check(1)
                 }
 
-                // Add Audio Only Option
                 if (result.audioStream != null) {
                     val rbAudio = RadioButton(this@InterceptorActivity).apply {
                         text = "Audio Only (M4A)"
@@ -60,6 +59,8 @@ class InterceptorActivity : Activity() {
                 }
 
             } catch (e: Exception) {
+                // CRITICAL ADDITION: Print the full stack trace to Termux Logcat
+                Log.e("NanoDL_Crash", "Extraction Engine Failed", e)
                 Toast.makeText(this@InterceptorActivity, e.message, Toast.LENGTH_LONG).show()
                 finish()
             }
