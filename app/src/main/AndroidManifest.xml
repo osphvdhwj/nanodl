@@ -11,12 +11,22 @@
         android:name=".NanoApplication"
         android:allowBackup="true"
         android:label="NanoDL"
-        android:theme="@style/Theme.Design.BottomSheetDialog">
+        android:theme="@android:style/Theme.DeviceDefault.Light">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".ui.InterceptorActivity"
             android:exported="true"
             android:excludeFromRecents="true"
+            android:theme="@style/Theme.TransparentBottomSheet"
             android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
