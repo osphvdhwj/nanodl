@@ -10,10 +10,9 @@ import kotlinx.coroutines.withContext
 data class ExtractionResult(
     val videoId: String,
     val title: String,
-    val videoStream: VideoStream?,
-    val audioStream: AudioStream?,
-    val subtitleUrl: String?,
-    val resolution: String
+    val videoStreams: List<VideoStream>,
+    val bestAudio: AudioStream?,
+    val subtitleUrl: String?
 )
 
 object YouTubeBrain {
@@ -22,12 +21,12 @@ object YouTubeBrain {
             val extractor: StreamExtractor = ServiceList.YouTube.getStreamExtractor(youtubeUrl)
             extractor.fetchPage()
 
-            // Fixed: Added safe calls (?.) to format and resolution
-            val bestVideo = extractor.videoOnlyStreams
+            // Sort native MP4 streams by resolution to populate the UI choices
+            val videoStreams = extractor.videoOnlyStreams
                 .filter { it.format?.name == "MPEG_4" }
-                .maxByOrNull { it.resolution?.replace("p", "")?.toIntOrNull() ?: 0 }
+                .sortedByDescending { it.getResolution()?.replace("p", "")?.toIntOrNull() ?: 0 }
+                .distinctBy { it.getResolution() }
 
-            // Fixed: Added safe calls (?.) to format
             val bestAudio = extractor.audioStreams
                 .filter { it.format?.name == "M4A" }
                 .maxByOrNull { it.averageBitrate }
@@ -36,16 +35,15 @@ object YouTubeBrain {
             if (fetchSubtitles && !extractor.subtitlesDefault.isNullOrEmpty()) {
                 val bestSub = extractor.subtitlesDefault.find { it.languageTag.contains("en") } 
                     ?: extractor.subtitlesDefault.first()
-                subUrl = bestSub.url
+                subUrl = bestSub.content // Fixed: .url is deprecated
             }
 
             ExtractionResult(
-                videoId = extractor.id ?: "unknown",
-                title = extractor.name ?: "Unknown Title",
-                videoStream = bestVideo,
-                audioStream = bestAudio,
-                subtitleUrl = subUrl,
-                resolution = bestVideo?.resolution ?: "AudioOnly"
+                videoId = extractor.id, // Fixed: Elvis ?: operator removed for non-null types
+                title = extractor.name,
+                videoStreams = videoStreams,
+                bestAudio = bestAudio,
+                subtitleUrl = subUrl
             )
         }
     }

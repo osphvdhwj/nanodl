@@ -10,6 +10,7 @@ import com.yourname.nanodl.R
 import com.yourname.nanodl.extractor.YouTubeBrain
 import com.yourname.nanodl.service.DownloadEngineService
 import com.yourname.nanodl.utils.ConfigManager
+import org.schabi.newpipe.extractor.stream.VideoStream
 import kotlinx.coroutines.*
 
 class InterceptorActivity : Activity() {
@@ -26,6 +27,7 @@ class InterceptorActivity : Activity() {
         val spinner = findViewById<ProgressBar>(R.id.loadingSpinner)
         val formatGroup = findViewById<RadioGroup>(R.id.formatGroup)
         val downloadBtn = findViewById<Button>(R.id.downloadBtn)
+        val selectQualityLabel = findViewById<TextView>(R.id.selectQualityLabel)
 
         val url = intent.dataString ?: intent.getStringExtra(Intent.EXTRA_TEXT) ?: return finish()
         val cleanUrl = extractUrl(url)
@@ -39,27 +41,33 @@ class InterceptorActivity : Activity() {
                 spinner.visibility = View.GONE
                 formatGroup.visibility = View.VISIBLE
                 downloadBtn.visibility = View.VISIBLE
+                selectQualityLabel.visibility = View.VISIBLE
 
-                if (result.videoStream != null) {
+                var firstId = -1
+
+                // Dynamically build the Radio Buttons based on available formats
+                result.videoStreams.forEachIndexed { index, stream ->
                     val rbVideo = RadioButton(this@InterceptorActivity).apply {
-                        text = "Video (${result.resolution})"
-                        id = 1
+                        text = "Video (${stream.getResolution()})"
+                        id = index + 1
                     }
                     formatGroup.addView(rbVideo)
-                    formatGroup.check(1)
+                    if (firstId == -1) firstId = rbVideo.id
                 }
 
-                if (result.audioStream != null) {
+                if (result.bestAudio != null) {
+                    val audioId = result.videoStreams.size + 1
                     val rbAudio = RadioButton(this@InterceptorActivity).apply {
                         text = "Audio Only (M4A)"
-                        id = 2
+                        id = audioId
                     }
                     formatGroup.addView(rbAudio)
-                    if (result.videoStream == null) formatGroup.check(2)
+                    if (firstId == -1) firstId = audioId
                 }
 
+                if (firstId != -1) formatGroup.check(firstId)
+
             } catch (e: Exception) {
-                // CRITICAL ADDITION: Print the full stack trace to Termux Logcat
                 Log.e("NanoDL_Crash", "Extraction Engine Failed", e)
                 Toast.makeText(this@InterceptorActivity, e.message, Toast.LENGTH_LONG).show()
                 finish()
@@ -68,21 +76,28 @@ class InterceptorActivity : Activity() {
 
         downloadBtn.setOnClickListener {
             val res = extractionResult ?: return@setOnClickListener
-            val isAudioOnly = formatGroup.checkedRadioButtonId == 2
+            val selectedId = formatGroup.checkedRadioButtonId
+            
+            val isAudioOnly = selectedId == res.videoStreams.size + 1
 
-            val finalVideo = if (isAudioOnly) null else res.videoStream
-            val resStr = if (isAudioOnly) "Audio" else res.resolution
+            val finalVideo: VideoStream? = if (isAudioOnly) null else res.videoStreams.getOrNull(selectedId - 1)
+            val resStr = if (isAudioOnly) "Audio" else finalVideo?.getResolution() ?: "Unknown"
             val extStr = if (isAudioOnly) "m4a" else "mp4"
 
             val finalFileName = config.buildFileName(res.title, res.videoId, resStr, extStr)
 
             val serviceIntent = Intent(this, DownloadEngineService::class.java).apply {
-                putExtra("VIDEO_URL", finalVideo?.url)
-                putExtra("AUDIO_URL", res.audioStream?.url)
+                putExtra("VIDEO_URL", finalVideo?.content) // Fixed: .url is deprecated
+                putExtra("AUDIO_URL", res.bestAudio?.content)
                 putExtra("SUB_URL", res.subtitleUrl)
                 putExtra("FILE_NAME", finalFileName)
             }
-            startForegroundService(serviceIntent)
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
             finish()
         }
     }
