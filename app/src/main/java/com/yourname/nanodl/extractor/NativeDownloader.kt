@@ -27,12 +27,10 @@ class NativeDownloader : Downloader() {
         connection.readTimeout = 10000
         connection.instanceFollowRedirects = false
 
-        // --- THE BYPASS ---
-        // Force the YouTube Consent Cookie to bypass the bot/GDPR block page
+        // Consent Bypass
         connection.addRequestProperty("Cookie", "CONSENT=YES+cb.20230509-09-p0.en+FX+083")
         connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 
-        // Add NewPipe's requested headers, but don't overwrite our bypasses
         request.headers().forEach { (key, list) ->
             if (key.equals("Accept-Encoding", ignoreCase = true)) {
                 connection.addRequestProperty("Accept-Encoding", "gzip, deflate")
@@ -40,6 +38,15 @@ class NativeDownloader : Downloader() {
                 for (value in list) {
                     connection.addRequestProperty(key, value)
                 }
+            }
+        }
+
+        // --- THE CRITICAL FIX: Write POST payloads to the server ---
+        val dataToSend = request.dataToSend()
+        if (dataToSend != null) {
+            connection.doOutput = true
+            connection.outputStream.use { os ->
+                os.write(dataToSend)
             }
         }
 
