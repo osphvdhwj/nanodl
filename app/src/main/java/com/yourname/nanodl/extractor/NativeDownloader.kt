@@ -6,14 +6,11 @@ import org.schabi.newpipe.extractor.downloader.Response
 import java.net.HttpURLConnection
 import java.net.URL
 
-// Fixed: Downloader() requires parentheses as it is an abstract class
 class NativeDownloader : Downloader() {
     companion object {
         private var instance: NativeDownloader? = null
         fun getInstance(): NativeDownloader {
-            if (instance == null) {
-                instance = NativeDownloader()
-            }
+            if (instance == null) instance = NativeDownloader()
             return instance!!
         }
     }
@@ -25,6 +22,9 @@ class NativeDownloader : Downloader() {
         connection.requestMethod = request.httpMethod()
         connection.connectTimeout = 10000
         connection.readTimeout = 10000
+        
+        // CRITICAL FIX: Stop Android from swallowing the cookies needed for Visitor ID
+        connection.instanceFollowRedirects = false
 
         request.headers().forEach { (key, list) ->
             for (value in list) {
@@ -43,9 +43,7 @@ class NativeDownloader : Downloader() {
 
         val responseHeaders = mutableMapOf<String, List<String>>()
         connection.headerFields.forEach { (key, value) ->
-            if (key != null) {
-                responseHeaders[key] = value
-            }
+            if (key != null) responseHeaders[key] = value
         }
 
         return Response(responseCode, responseMessage, responseHeaders, responseBody, request.url())
