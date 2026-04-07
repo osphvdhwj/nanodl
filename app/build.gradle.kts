@@ -29,5 +29,4 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.24.2")
-    implementation("com.grack:nanojson:1.9")
 }
