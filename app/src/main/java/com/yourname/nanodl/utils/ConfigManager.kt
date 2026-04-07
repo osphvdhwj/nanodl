@@ -14,6 +14,11 @@ class ConfigManager(context: Context) {
         get() = prefs.getBoolean("DOWNLOAD_SUBS", false)
         set(value) = prefs.edit().putBoolean("DOWNLOAD_SUBS", value).apply()
 
+    // THE FIX: Added Storage URI persistence
+    var customStorageUri: String?
+        get() = prefs.getString("STORAGE_URI", null)
+        set(value) = prefs.edit().putString("STORAGE_URI", value).apply()
+
     fun buildFileName(title: String, id: String, resolution: String, ext: String): String {
         val safeTitle = title.replace(Regex("[\\\\/:*?\"<>|]"), "_")
         return outputTemplate
