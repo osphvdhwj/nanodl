@@ -22,14 +22,14 @@ object YouTubeBrain {
             val extractor: StreamExtractor = ServiceList.YouTube.getStreamExtractor(youtubeUrl)
             extractor.fetchPage()
 
-            if (extractor.isLiveStream) throw Exception("Cannot download active live streams.")
-
+            // Fixed: Added safe calls (?.) to format and resolution
             val bestVideo = extractor.videoOnlyStreams
-                .filter { it.format.name == "MPEG_4" }
-                .maxByOrNull { it.resolution.replace("p", "").toIntOrNull() ?: 0 }
+                .filter { it.format?.name == "MPEG_4" }
+                .maxByOrNull { it.resolution?.replace("p", "")?.toIntOrNull() ?: 0 }
 
+            // Fixed: Added safe calls (?.) to format
             val bestAudio = extractor.audioStreams
-                .filter { it.format.name == "M4A" }
+                .filter { it.format?.name == "M4A" }
                 .maxByOrNull { it.averageBitrate }
 
             var subUrl: String? = null

@@ -6,7 +6,8 @@ import org.schabi.newpipe.extractor.downloader.Response
 import java.net.HttpURLConnection
 import java.net.URL
 
-class NativeDownloader : Downloader {
+// Fixed: Downloader() requires parentheses as it is an abstract class
+class NativeDownloader : Downloader() {
     companion object {
         private var instance: NativeDownloader? = null
         fun getInstance(): NativeDownloader {
