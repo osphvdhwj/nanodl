@@ -3,11 +3,13 @@ package com.yourname.nanodl.work
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import androidx.work.ListenableWorker.Result as WorkResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -15,8 +17,8 @@ class DownloadWorker(context: Context, parameters: WorkerParameters) : Coroutine
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val url = inputData.getString("URL") ?: return@withContext Result.failure()
+    override suspend fun doWork(): WorkResult = withContext(Dispatchers.IO) {
+        val url = inputData.getString("URL") ?: return@withContext WorkResult.failure()
         val formatId = inputData.getString("FORMAT_ID") ?: "best"
         
         // Android 14 WorkManager Foreground rules
@@ -24,18 +26,15 @@ class DownloadWorker(context: Context, parameters: WorkerParameters) : Coroutine
         setForeground(createForegroundInfo(url, 0))
 
         try {
-            // Here is where we will hook in the yt-dlp binary execution
-            // based on the YTDLnis StreamProcessExtractor logic.
-            
             // Simulate Download for UI testing
             for (i in 1..100 step 10) {
                 setForeground(createForegroundInfo("Downloading...", i))
                 kotlinx.coroutines.delay(500)
             }
 
-            Result.success()
+            WorkResult.success()
         } catch (e: Exception) {
-            Result.failure()
+            WorkResult.failure()
         }
     }
 
@@ -47,7 +46,13 @@ class DownloadWorker(context: Context, parameters: WorkerParameters) : Coroutine
             .setProgress(100, progress, progress == 0)
             .setOngoing(true)
             .build()
-        return ForegroundInfo(1, notification)
+            
+        // Explicitly declare Data Sync type for Android 14 restrictions
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(1, notification)
+        }
     }
 
     private fun createChannel() {
