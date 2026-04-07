@@ -21,9 +21,9 @@ jobs:
         cache: gradle
 
     - name: Generate Gradle Wrapper and Build
-      # This uses the system Gradle to create the missing gradlew script on the fly
+      # Explicitly targeting version 8.6 prevents runner updates from breaking the build
       run: |
-        gradle wrapper
+        gradle wrapper --gradle-version 8.6
         chmod +x gradlew
         ./gradlew assembleDebug
 
