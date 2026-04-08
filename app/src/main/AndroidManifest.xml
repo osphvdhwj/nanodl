@@ -10,7 +10,7 @@
         android:name=".NanoApplication"
         android:allowBackup="true"
         android:label="NanoDL"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
         <activity
             android:name=".ui.MainActivity"
